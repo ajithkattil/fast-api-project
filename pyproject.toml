@@ -1,0 +1,125 @@
+[tool.poetry]
+name = "recipes-api"
+version = "0.1.0"
+description = "A FastAPI-based api for managing recipes"
+authors = ["Daniel Hildebrandt <daniel.hildebrandt@external.freshrealm.com>"]
+readme = "README.md"
+packages = [{ include = "src" }]
+
+[[tool.poetry.source]]
+name = "freshrealm"
+url = "https://pypi.fury.io/freshrealm-team/"
+priority = "supplemental"
+
+[tool.poetry.dependencies]
+# Core web framework and async support
+python = "^3.12"
+fastapi = "^0.110.0"
+uvicorn = {extras = ["standard"], version = "^0.27.1"}
+python-json-logger = "^2.0.7"
+pydantic-settings = "^2.8.1"
+httpx = "^0.28.1"
+requests = "^2.32.3"
+types-requests = "^2.32.0.20250515"
+sqlalchemy = {extras = ["postgresql-psycopg", "mypy"], version = "^2.0.30"}
+python-dateutil = "^2.9.0.post0"
+"fr.jwt" = "^3.0.0"
+"blueapron.protos" = "^3.364.0"
+kafka-python = "^2.2.15"
+protobuf = "^6.31.1"
+asyncio = "^3.4.3"
+rollbar = "^1.0.0"
+ddtrace = "^2.0.0"
+boto3 = "^1.40.13"
+pyjwt = "^2.10.1"
+cryptography = "^45.0.6"
+
+[tool.poetry.group.dev.dependencies]
+# Testing framework and utilities
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.5"
+pytest-mock = "^3.12.0"
+
+# Code quality and formatting
+ruff = "<0.9.9"
+mypy = "^1.15.0"
+pre-commit = "^4.1.0"
+
+# Optional parallel testing support
+pytest-env = "^1.1.5"
+types-requests = "^2.32.0.20250515"
+types-python-dateutil = "^2.9.0.20250516"
+[tool.poetry.group.parallel.dependencies]
+pytest-xdist = "^3.5.0"
+
+# DB Migrations
+[tool.poetry.group.migrations.dependencies]
+alembic = "^1.13.1"
+# This duplicated here so that we can install only the dev group for migrations
+sqlalchemy = {extras = ["postgresql-psycopg", "mypy"], version = "^2.0.30"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+exclude = [
+    "alembic",
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    "__pypackages__",
+    "build",
+    "dist",
+    "migrations",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "B", "UP", "RUF"]
+ignore = []
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["F401", "F811"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+combine-as-imports = true
+force-single-line = false
+order-by-type = true
+split-on-trailing-comma = true
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends"]
+
+# MyPy configuration for type checking
+[tool.mypy]
+exclude = [
+    "^alembic/",
+]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disable_error_code = ["misc"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "dateutil.*"
+ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::UserWarning",
+]

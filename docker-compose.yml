@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:12-alpine
+    container_name: recipes-api-service-db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+    environment:
+      POSTGRES_USER: recipes_api_service_primary
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: recipes_api_service_primary
+    ports:
+      - 5432:5432
+volumes:
+  db_data:
+     

@@ -1,0 +1,7 @@
+dependencies:
+  - name: ba-common
+    version: "~0.0.7"
+    repository: "@ba-common"
+
+# helm repo add ba-common \
+#  "https://${HELM_GITHUB_API_TOKEN}@raw.githubusercontent.com/FreshRealm/helm-common-chart/master/docs/"

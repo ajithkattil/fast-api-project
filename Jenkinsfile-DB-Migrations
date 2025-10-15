@@ -1,0 +1,83 @@
+
+pipeline {
+  agent any
+  parameters {
+    choice(name: 'DEPLOY_ENV', description: 'deploy environment', choices: ['staging', 'production'])
+    string(name: 'MIGRATION_DIR', description: 'Migration Directory')
+    string(name: 'DB_URL', description: 'Database URL')
+    string(name: 'DB_USER', defaultValue: 'recipes_api_deploy_primary', description: 'Database User')
+    string(name: 'DB_NAME', defaultValue: 'recipes_api_service_primary', description: 'Database Name')
+    string(name: 'DB_PORT', defaultValue: '5432', description: 'Database Port')
+  }
+
+  environment {
+    PYENV_ROOT = "${WORKSPACE}/.pyenv"
+    PATH = "${WORKSPACE}/.pyenv/bin:${WORKSPACE}/.pyenv/shims:$PATH"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Get DB Secrets') {
+      steps {
+        script {
+          def environments = [
+            'staging' : [
+              'account' : '443370692729'
+            ],
+            'production' : [
+              'account' : '354918380782'
+            ]
+          ]
+          withAWS(roleAccount: environments[params.DEPLOY_ENV].account, role: 'JenkinsAWSParameterStoreAccess') {
+            def db_password = sh(script: "aws ssm get-parameter \
+              --name \"/${params.DEPLOY_ENV}/applications/recipes-api-service/environment/DEPLOY_DATABASE_PASSWORD\" \
+              --output text \
+              --with-decryption \
+              --query Parameter.Value", returnStdout: true).trim()
+            env.DB_PASSWORD = db_password
+          }
+        }
+      }
+    }
+
+    stage('DB Migrations') {
+      environment {
+        DATABASE_URL="${params.DB_URL}"
+        DATABASE_USER="${params.DB_USER}"
+        DATABASE_NAME="${params.DB_NAME}"
+        DATABASE_PASSWORD="${env.DB_PASSWORD}"
+        SERVICE_DATABASE_PASSWORD="${env.DB_PASSWORD}"
+        DATABASE_PORT="${params.DB_PORT}"
+      }
+      steps {
+        script {
+          dir("${params.MIGRATION_DIR}") {
+            withCredentials([string(credentialsId: 'FR_GEMFURY_API_TOKEN', variable: 'FR_GEMFURY_API_TOKEN')]) {
+              sh '''#!/usr/bin/env bash
+                set -euo pipefail
+                export PYENV_ROOT="/home/jenkins/.pyenv"
+                export PATH="/home/jenkins/.pyenv/bin:/home/jenkins/.pyenv/shims:$PATH"
+
+                pyenv local 3.12.2
+                python --version
+                pip install poetry==1.8.3
+                poetry config http-basic.freshrealm "freshrealm-team" ${FR_GEMFURY_API_TOKEN}
+                poetry lock
+                poetry install
+                poetry run alembic upgrade head
+              '''
+            }
+          }
+
+        }
+      }
+    }
+  }
+}
+
+

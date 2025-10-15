@@ -1,0 +1,7 @@
+apiVersion: v1
+name: recipes-api-service
+description: A Helm chart Recipies-Api-Service resource deployment
+version: 0.0.1
+appVersion: "0.0.1"
+keywords:
+  - recipes-api-service

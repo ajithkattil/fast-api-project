@@ -1,0 +1,2 @@
+{{- $_ := set .Values "fullnameOverride" "recipes-api-service" -}}
+{{- template "common.service" (list . "common.service.default") -}}

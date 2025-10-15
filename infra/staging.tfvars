@@ -1,0 +1,13 @@
+environment                    = "staging"
+vpc_id                         = "vpc-0289f68c390c86674"
+subnet_ids                     = ["subnet-07f857f0ce138978e", "subnet-0fafbe8440eda4270", "subnet-0cbc3f91e0945bd23", "subnet-07670d080203b78be"]
+aurora_db_version              = "16.6"
+aurora_db_instance_class       = "db.t3.medium"
+aws_region                     = "us-east-1"
+k8s_black_cluster_sg_id        = "sg-0de690846a3d55dea"
+k8s_red_cluster_sg_id          = "sg-051b9072982235701"
+k8s_red_vpc_cidr               = "10.85.128.0/17"
+k8s_black_vpc_cidr             = "10.85.0.0/17"
+eks_red_cluster_name           = "k8s-red-staging"
+eks_black_cluster_name         = "k8s-black-staging" 
+util_vpc_cidr                  = "10.92.0.0/17"

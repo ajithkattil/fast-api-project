@@ -1,0 +1,42 @@
+{{- if .Values.cronjob.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recipes-api-service-token-refresh
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cronjob._default.concurrencyPolicy }}
+  failedJobsHistoryLimit: {{ .Values.cronjob._default.failedJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ .Values.cronjob._default.successfulJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            linkerd.io/inject: disabled
+          labels:
+            app: recipes-api-service-token-refresh
+        spec:
+          restartPolicy: {{ .Values.job._default.restartPolicy }}
+          serviceAccountName: {{ .Values.serviceAccountName }}
+          containers:
+          - name: token-refresh
+            image: "{{ (index .Values.container "recipes-api-service-token-refresh.job.container-1").image }}:{{ .Values.image.tag }}"
+            imagePullPolicy: IfNotPresent
+            command: ["python", "-m", "src.token_refresh_main"]
+            env:
+            - name: DEPLOY_ENV
+              value: {{ .Values.environment | quote }}
+            envFrom:
+            - secretRef:
+                name: shared-k8s-environment-ssm
+                optional: true
+            - secretRef:
+                name: recipes-api-service-environment-ssm
+                optional: true
+            - configMapRef:
+                name: recipes-api-service-environment
+                optional: true
+            resources:
+{{- toYaml (index .Values.container "recipes-api-service-token-refresh.job.container-1").resources | nindent 14 }}
+{{- end -}}

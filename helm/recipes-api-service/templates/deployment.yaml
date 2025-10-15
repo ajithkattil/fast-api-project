@@ -1,0 +1,36 @@
+{{- $_ := set .Values "fullnameOverride" "recipes-api-service" -}}
+{{- include "common.deployment" (list . "recipes-api-service.deployment") -}}
+
+{{- define "recipes-api-service.deployment" -}}
+spec:
+  template:
+    spec:
+      containers:
+      - {{ template "common.deployment.container" (list . "recipes-api-service.deployment.container") }}
+{{- end -}}
+{{- define "recipes-api-service.deployment.container" -}}
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 5
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+    scheme: HTTP
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+ports:
+  - containerPort: 8080
+    name: http
+    protocol: TCP
+{{- end -}}
+
+

@@ -1,0 +1,204 @@
+
+---
+#
+# This file contains default values for the Helm Chart
+#
+# Add here any values that are required by templates.
+# If you miss some of them, you will see an error after
+#  `helm lint charts/yourproject`
+# command execution, like this one:
+#
+# [ERROR] templates/: render error in "project-demo/templates/secret.yaml":
+# template: project-demo/templates/secret.yaml:14:48: executing "project-demo/templates/secret.yaml" at <b64enc>
+#
+activeDeadlineSeconds:
+  _default: 3600
+
+backoffLimit:
+  _default: 0 # 0 means no retries for jobs
+
+# CI will fill these values during the Chart build
+ciLabels: {}
+#  buildNumber: "none"
+#  user: "none"
+#  branch: "none"
+#  deployBuildNumber: "none"
+#  deployUser: "none"
+#  appVersion: "0.0.1"
+
+container:
+  _default:
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 60
+      periodSeconds: 20
+      successThreshold: 1
+      timeoutSeconds: 20
+    readinessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 5
+      periodSeconds: 20
+      successThreshold: 1
+      timeoutSeconds: 20
+  recipes-api-service-token-refresh.job.container-1:
+    image: 442426862663.dkr.ecr.us-east-1.amazonaws.com/freshrealm/recipes-api-service
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+DNS:
+  cloud:
+    private: k8s.private.local
+    public: k8s.public.local
+
+enableNodeSelector: false
+
+env: "loc"
+environment: "local"
+
+# Add more environment values. Use _default for applications that don't have separate key.
+# _default won't be joined with any others.
+extraEnvVars:
+  recipes-api-service:
+    DEPLOY_ENV: "{{ .Values.environment }}"
+    MOCK_CULOPS_API: "False"
+    MOCK_CABINET_API: "False"
+    
+    # Datadog APM - Only add what's NOT already set by ba-common
+    # ba-common already sets: DD_ENV, DD_SERVICE, DD_VERSION, DD_AGENT_HOST
+    # DD_AGENT_HOST points to the node IP where the Datadog DaemonSet agent runs
+    DD_TRACE_ENABLED: "true"
+
+    
+image:
+  # Do NOT set the image hash or tag manually. CI will do this for you.
+  registry: 442426862663.dkr.ecr.us-east-1.amazonaws.com/freshrealm/
+  name: recipes-api-service
+  tag:
+  registrySecret:
+
+ingresses:
+  alb: true
+  environment:
+    staging:
+      host: recipes-api-service.staging.f--r.co
+
+minReadySeconds:
+  _default: 5
+#  custom-app: 5
+
+# ports for pods > { app-name > { port-name > {values...}, ... }, ... }
+ports:
+  #  _default: {}
+  recipe-api-service:
+    http:
+      containerPort: 8080
+      protocol: TCP
+
+# You can enable or disable specific pre-install, pre-upgrade and pre-rollback hooks
+# using the following flags. Enable them by default when we don't have any alternative CIs
+# running in parallel to avoid concurrent executions of the same commands over the same data storages
+#
+# IMPORTANT!
+# All jobs listed here will be executed in parallel in a random order.
+# If you need to run some scripts consistently, use InitContainers inside the one of K8s jobs
+# and collect all related commands together.
+#
+preHook:
+  # The values MUST be FALSE by default as they
+  # don't need to be deployed together with all others templates from the chart
+
+progressDeadlineSeconds:
+  _default: 600
+#  custom-app: 600
+
+replicas:
+  _default: 1
+
+resources:
+  _default: {}
+  recipes-api-service:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 512Mi
+# You can set resources as in example:
+#  your-app:
+#    requests:
+#      memory: 1Gi
+#    limits:
+#      memory: 1Gi
+
+revisionHistoryLimit:
+  _default: 2
+#  custom-app: 2
+
+service:
+  _default:
+    #    annotations:
+    #      # annotation example for Traefik Ingress from legacy K8s cluster
+    #      traefik.backend.circuitbreaker: NetworkErrorRatio() > 0.5
+    # type: ClusterIP
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+      service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-name: "k8s-stagingred-recipesapisvc"
+    # ports for the service > { port-name > {values...}, ... }, ... }
+    ports:
+      - name: http
+        port: 80
+        targetPort: 8080
+        protocol: TCP
+
+ssl:
+  alb:
+    cert: arn:aws:acm:us-east-1:*******:certificate/12345
+
+strategy:
+  # The default strategy "maxSurge: 1" + "maxUnavailable: 0" is designed to replace pods one by one
+  # A new pod will start first and when it's ready the old one will be
+  # removed.
+  # This strategy can be bad for pods that must not start in parallel. For those pods
+  # you may need to setup alternative settings, for example:
+  # "maxSurge: 0" + "maxUnavailable: 1", so the old pod will be deleted first
+  # and only after a new one will be started.
+  _default:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+#   custom-app: {}
+
+ttlSecondsAfterFinished:
+  _default: 43200
+
+# CronJob configuration for token refresh
+cronjob:
+  enabled: true
+  schedule: "0 * * * *"  # Every hour at minute 0
+  _default:
+    schedule: "*/30 * * * *"  # Every 30 minutes
+    concurrencyPolicy: Forbid
+    failedJobsHistoryLimit: 3
+    successfulJobsHistoryLimit: 3
+
+# Service Account for CronJob
+serviceAccountName: recipes-api-service
+
+# Job configuration (used by CronJob)
+job:
+  _default:
+    restartPolicy: OnFailure
+    activeDeadlineSeconds: 3600  # 1 hour timeout
+    annotations:
+      recipes-api-service/managed-by: "helm"
+
+# noop: force fresh helm render at 2025-10-07T19:40:08Z

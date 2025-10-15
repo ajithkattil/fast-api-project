@@ -1,0 +1,13 @@
+environment                    = "production"
+vpc_id                         = "vpc-02e963bb134151828"
+subnet_ids                     = ["subnet-020903a0581f14eda", "subnet-0fab3a3905865e78d", "subnet-001cf60eac8fbc36b", "subnet-09f715cbf7ba4306e"]
+aurora_db_version              = "16.6"
+aurora_db_instance_class       = "db.t3.medium"
+aws_region                     = "us-east-1"
+k8s_black_cluster_sg_id        = "sg-0e85e7cf837a1a9ad"
+k8s_red_cluster_sg_id          = "sg-0dcfe6aa94e51f76d"
+k8s_red_vpc_cidr               = "10.89.0.0/16"
+k8s_black_vpc_cidr             = "10.90.0.0/16"
+eks_red_cluster_name           = "k8s-red-production"
+eks_black_cluster_name         = "k8s-black-production" 
+util_vpc_cidr                  = "10.92.0.0/17"

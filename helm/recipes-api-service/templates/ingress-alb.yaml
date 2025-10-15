@@ -1,0 +1,4 @@
+{{- if .Values.ingresses.alb -}}
+{{- $_ := set .Values "fullnameOverride" "recipes-api-service" -}}
+{{- template "common.ingress" (list . "common.ingress.default") -}}
+{{- end -}}
